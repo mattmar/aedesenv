@@ -24,18 +24,19 @@ touch ~/.grass.bashrc
 echo "source(~/Github/aedesenv/aedesenv.sh)" >> ~/.grass.bashrc
 
 # Define working directory
-DIR='/data/matteo/prism_data/'
+DIR='/tmp/'
 
 # File with dates
-seq 1 365 | xargs -I {} date -d "2000-01-01 {} days" +%Y-%m-%d > $DIR/dates.txt
+seq 1 2 | xargs -I {} date -d "2000-01-01 {} days" +%Y-%m-%d > $DIR/dates.txt
 
-# File with coordinates in lat long and | as separator
- yes "1|-118.0275|34.073333" | head -n 365 > $DIR/xy.txt
+# File with coordinates in lat long and | as separator. Must be same length as dates
+ yes "1|-118.0275|34.073333" | head -n 2 > $DIR/xy.txt
 
 # Create GRASS location with custom EPSG
 grass73 -c EPSG:4263 $HOME/grassdata/latlong/
 
 # Create a mapset, define the climatic variables to download and run the function with custom options
 grass73 -c $HOME/grassdata/latlong/mymapset
-clm=( tmin tmax ppt vpdmax )
-aedesenv $DIR $DIR/xy.txt $DIR/dates.txt 30 clm
+clm=( tmin tmax )
+DIR='/tmp/'
+aedesenv /tmp/ xy.txt dates.txt 2 clm

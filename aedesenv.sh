@@ -17,7 +17,7 @@ function aedesenv ()
     DATES=$3 # input dates
     LAG=${4-1} # time lag to evaluate
     SEG=${6:-1} # name of the file segment
-    MERGE=${7:-0} # If MERGE == 1 than merge outputs
+    MERGE=${7:-1} # If MERGE == 1 than merge outputs
     #### To make an array a local variable ####
     # http://www.unix.com/shell-programming-and-scripting/61370-bash-ksh-passing-array-function.html
     # Setting the shell's Internal Field Separator to null
@@ -88,7 +88,7 @@ function aedesenv ()
                     echo "###### Downloading DAYMET data HTTP ######"
                     wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
                 else
-                 echo "Wrong variable name!"
+                   echo "Wrong variable name!"
             fi #fish data from webservice or ftp according to the variables
 
             if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
@@ -113,10 +113,11 @@ function aedesenv ()
              elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]
              	then #DAYMET
              	v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
-             else #PRISM and DAYMET
-             	v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
-             	v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
-             fi
+             elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] 
+                then #PRISM and DAYMET
+                v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
+                v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
+            fi
 
              # Check if map exists and sample it at coords
              g.findfile element=cell file="P$VAR"_"$NEWDATE" mapset=$MSC > /dev/null
@@ -139,13 +140,13 @@ done < $DIR/$DATES 2>&1 | tee /tmp/aedesenv_std_error_log$SEG.log # Redirect the
 head -n1 $DIR/tempoutput$SEG.txt > $DIR/header$SEG.txt && cat $DIR/output$SEG.txt >> $DIR/header$SEG.txt && mv $DIR/header$SEG.txt $DIR/final_output$SEG.txt
 
 if [ $MERGE -eq 1 ]
-    then
+    then 
 # Merge the three files in one output file
-cat final_output*.txt > outfile.txt
-sed -i '/^ cat/d' outfile.txt #Remove rows that begin with cat
-#sed -i -e "1i\ `head -n1 tempoutput$SEG.txt`" outfile.txt #Add header
+cat $DIR/final_output*.txt > $DIR/outfile.txt
+sed -i '/^cat/d' $DIR/outfile.txt #Remove rows that begin with cat
+sed -i -e "1i\ `head -n1 $DIR/tempoutput$SEG.txt`" $DIR/outfile.txt #Add header
 
 # Cleaning
-rm final_output$SEG.txt tempoutput$SEG.txt
+rm $DIR/final_output*.txt $DIR/tempoutput*.txt
 fi
 }
