@@ -13,10 +13,10 @@ function aedesenv ()
 
     # Define variables
     DIR=$1 # directories where $2,$3 are stored and where the output files are stored
-    DATA=$2 # input dates
-    INPUT=$3 # input coordinates
-    SEG=${4:-1} # name of the file segment
-    LAG=${5-1} # time lag to evaluate
+    COORDS=$2 # input coords
+    DATES=$3 # input dates
+    LAG=${4-1} # time lag to evaluate
+    SEG=${6:-1} # name of the file segment
     MERGE=${7:-0} # If MERGE == 1 than merge outputs
     #### To make an array a local variable ####
     # http://www.unix.com/shell-programming-and-scripting/61370-bash-ksh-passing-array-function.html
@@ -24,7 +24,7 @@ function aedesenv ()
     OLD_IFS=$IFS
     IFS=''
     # Create a string containing "colors[*]"
-    local VARS1="$6[*]"
+    local VARS1="$5[*]"
     
     # Assign loc_array value to ${colors[*]} using indirect variable reference
     local VARS=(${!VARS1}) # considered climatic variables    
@@ -38,7 +38,7 @@ function aedesenv ()
     e=1
 
     # Import the file with coordinates (lat long)
-    v.in.ascii format=point in=$DIR/$DATA out=coords sep='|' columns="idd varchar, x double precision, y double precision" x=2  y=3 --o
+    v.in.ascii format=point in=$DIR/$COORDS out=coords sep='|' columns="idd varchar, x double precision, y double precision" x=2  y=3 --o
     
     # Loop over each date in the input file 
     while ((ee++)); read DATE || [[ -n "$DATE" ]]
@@ -94,7 +94,7 @@ function aedesenv ()
             if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
                 	then # Decompress the archive
                 	unzip -qq -o -d /tmp/$VAR"_"$NEWDATE"_"$SEG/ /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE 
-                	r.in.gdal --q in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE
+                	r.import in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE
                 fi
                 if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" ]] 
                 	then
@@ -133,7 +133,7 @@ function aedesenv ()
     done # End variables
     v.db.select tempcoords$SEG > $DIR/tempoutput$SEG.txt # Export the database 
     tail -n1 $DIR/tempoutput$SEG.txt >> $DIR/output$SEG.txt # Save values in a text document
-done < $DIR/$INPUT 2>&1 | tee /tmp/aedesenv_std_error_log$SEG.log # Redirect the standard error to a log file
+done < $DIR/$DATES 2>&1 | tee /tmp/aedesenv_std_error_log$SEG.log # Redirect the standard error to a log file
 
 # Add header to the final output
 head -n1 $DIR/tempoutput$SEG.txt > $DIR/header$SEG.txt && cat $DIR/output$SEG.txt >> $DIR/header$SEG.txt && mv $DIR/header$SEG.txt $DIR/final_output$SEG.txt
