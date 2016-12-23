@@ -23,10 +23,10 @@ function aedesenv ()
     # Setting the shell's Internal Field Separator to null
     OLD_IFS=$IFS
     IFS=''
-    # Create a string containing "colors[*]"
+    # Create a string containing "$5[*]"
     local VARS1="$5[*]"
     
-    # Assign loc_array value to ${colors[*]} using indirect variable reference
+    # Assign loc_array value to ${$5[*]} using indirect variable reference
     local VARS=(${!VARS1}) # considered climatic variables    
     
     # Resetting IFS to default
@@ -82,7 +82,7 @@ function aedesenv ()
                     echo "###### Downloading PRISM data HTTP ######"
                     wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
                     echo "###### Downloading DAYMET data ######"
-                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
+                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&disableProjSubset=on&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
                 elif [ "$S" == "DH" ]
                     then # HTTP
                     echo "###### Downloading DAYMET data HTTP ######"
