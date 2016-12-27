@@ -54,8 +54,7 @@ function aedesenv ()
     
     for VAR in "${VARS[@]}" # variable sequence
     do
-    	echo "###### Climatic variable $VAR ######"
-
+        echo "###### Climatic variable $VAR ######"
         for ((ii=0;ii<=$LAG;ii++)) # time lag sequence
         do
             iii=`printf "%02d" $ii` # while index
@@ -68,7 +67,6 @@ function aedesenv ()
             mkdir -p /tmp/$VAR"_"$NEWDATE"_"$SEG
             
             if [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]; then S="PF"; elif [ "$VAR" == "ppt" ]; then S="PH"; elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] || [ "$VAR" == "tmean" ]; then S="PDH"; elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]; then S="DH"; fi
-
                 if [ "$S" == "PF" ] 
                 then # FTP
                 echo "###### Downloading PRISM data FTP ######"
@@ -88,64 +86,59 @@ function aedesenv ()
                     echo "###### Downloading DAYMET data HTTP ######"
                     wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
                 else
-                   echo "Wrong variable name!"
+                 echo "Wrong variable name!"
             fi #fish data from webservice or ftp according to the variables
-
             if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
-                	then # Decompress the archive
-                	unzip -qq -o -d /tmp/$VAR"_"$NEWDATE"_"$SEG/ /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE 
-                	r.import in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE
+                    then # Decompress the archive
+                    unzip -qq -o -d /tmp/$VAR"_"$NEWDATE"_"$SEG/ /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE 
+                    r.import in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE
                 fi
                 if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" ]] 
-                	then
-                	#echo "$VAR"_"$NEWDATE"
-                	gdal_translate -of GTiff netCDF:\"`ls /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.*`\":$VAR /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".tif"
+                    then
+                    #echo "$VAR"_"$NEWDATE"
+                    gdal_translate -of GTiff netCDF:\"`ls /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.*`\":$VAR /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".tif"
                     r.import input=/tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.tif out=D$VAR"_"$NEWDATE"_"$X"_"$Y --o
                 fi
             rm /tmp/$VAR"_"$NEWDATE"_"$SEG/ -rf #remove data folder
         else 
-        	echo -e "\n ## Map already in GRASSDATA, skipping download ## \n"
+            echo -e "\n ## Map already in GRASSDATA, skipping download ## \n"
         fi
              # Add columns according to the database
              if [ "$VAR" == "ppt" ] || [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]
-             	then #PRISM
-             	v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
-             elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]
-             	then #DAYMET
-             	v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
-             elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] 
+                then #PRISM
+                v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
+            elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]
+                then #DAYMET
+                v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
+            elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] 
                 then #PRISM and DAYMET
                 v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
                 v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
             fi
-
              # Check if map exists and sample it at coords
              g.findfile element=cell file="P$VAR"_"$NEWDATE" mapset=$MSC > /dev/null
              if [ $? -eq 0 ] 
-             	then
-             	v.what.rast map=tempcoords$SEG raster=P$VAR"_"$NEWDATE column=P$VAR"_lag_"$iii # extract the value at coords x,y
-             fi
-             g.findfile element=cell file="D$VAR"_"$NEWDATE"_"$X"_"$Y" mapset=$MSC > /dev/null
-             if [ $? -eq 0 ]
-             	then
-             	v.what.rast map=tempcoords$SEG raster=D$VAR"_"$NEWDATE"_"$X"_"$Y column=D$VAR"_lag_"$iii
-             fi
+                then
+                v.what.rast map=tempcoords$SEG raster=P$VAR"_"$NEWDATE column=P$VAR"_lag_"$iii # extract the value at coords x,y
+            fi
+            g.findfile element=cell file="D$VAR"_"$NEWDATE"_"$X"_"$Y" mapset=$MSC > /dev/null
+            if [ $? -eq 0 ]
+                then
+                v.what.rast map=tempcoords$SEG raster=D$VAR"_"$NEWDATE"_"$X"_"$Y column=D$VAR"_lag_"$iii
+            fi
         done # End time lags
     done # End variables
     v.db.select tempcoords$SEG > $DIR/tempoutput$SEG.txt # Export the database 
     tail -n1 $DIR/tempoutput$SEG.txt >> $DIR/output$SEG.txt # Save values in a text document
 done < $DIR/$DATES 2>&1 | tee /tmp/aedesenv_std_error_log$SEG.log # Redirect the standard error to a log file
-
 # Add header to the final output
 head -n1 $DIR/tempoutput$SEG.txt > $DIR/header$SEG.txt && cat $DIR/output$SEG.txt >> $DIR/header$SEG.txt && mv $DIR/header$SEG.txt $DIR/final_output$SEG.txt
-
 if [ $MERGE -eq 1 ]
     then 
 # Merge the three files in one output file
 cat $DIR/final_output*.txt > $DIR/outfile.txt
 sed -i '/^cat/d' $DIR/outfile.txt #Remove rows that begin with cat
 sed -i -e "1i\ `head -n1 $DIR/tempoutput$SEG.txt`" $DIR/outfile.txt #Add header
-
 # Cleaning
 rm $DIR/final_output*.txt $DIR/tempoutput*.txt
 fi

@@ -47,3 +47,8 @@ aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new02 3 30 array 0
 grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM3soul001
 array=( tmin tmax ppt vpdmax vpdmin vp prcp )
 aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new03 4 30 array 1
+
+# Multiple call of the function aedesenv in different GRASS mapsets
+grass73 -c EPSG:4269 $HOME/grassdata/NAD83/elmonteT/
+clm=( vpdmax vpdmin )
+aedesenv '/data/matteo/prism_data/elmonte/' elmonte_coords elmonte_dates 0 clm 1 1
