@@ -41,6 +41,6 @@ grass73 -c EPSG:4263 $HOME/grassdata/latlong/
 
 ###### Create a mapset, define the climatic variables to download and run the function with custom options
 grass73 -c $HOME/grassdata/latlong/mymapset
-clm=( tmin tmax )
+clm=( vp )
 DIR='/tmp/'
 aedesenv /tmp/ xy.txt dates.txt 2 clm

@@ -31,8 +31,8 @@ awk -F, '{ printf "20%s%02d%02d\n", $3,$1,$2}' $DIR/dates1.csv > $DIR/dates_only
 # Testing
 head $DIR/dates_only.csv -n50 > $DIR/dates_t
 
-# Divide dataset in three segment to speed up the process
-split -dl 20000 $DIR/dates_only.csv $DIR/dates_new
+# Divide dataset in three segment to speed up the process split -dl 20000
+$DIR/dates_only.csv $DIR/dates_new
 
 # Multiple call of the function aedesenv in different GRASS mapsets
 grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISMsoul001
@@ -48,7 +48,7 @@ grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM3soul001
 array=( tmin tmax ppt vpdmax vpdmin vp prcp )
 aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new03 4 30 array 1
 
-# Multiple call of the function aedesenv in different GRASS mapsets
+# Download data for elmonte 
 grass73 -c EPSG:4269 $HOME/grassdata/NAD83/elmonteT/
-clm=( vpdmax vpdmin )
+clm=( tmin tmax vpdmax vpdmin vp)
 aedesenv '/data/matteo/prism_data/elmonte/' elmonte_coords elmonte_dates 0 clm 1 1

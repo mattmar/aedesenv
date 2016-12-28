@@ -62,8 +62,8 @@ function aedesenv ()
             YEAR=${NEWDATE:0:4};MONTH=${NEWDATE:4:2};DAY=${NEWDATE:6:4} # Extract year, month and day
             echo "###### Working on date $ee, $DATE - time lag $ii/$LAG days #####"
             
-            if [[ $grassmaps != *"P"$VAR"_"$NEWDATE""* ]] || [[ $grassmaps != *"D"$VAR"_"$NEWDAss"_"$X"_"$Y""* ]] 
-            then # check if map is already in the grass mapset
+            if [[ $grassmaps != *"P"$VAR"_"$NEWDATE""* ]] || [[ $grassmaps != *"D"$VAR"_"$NEWDAss"_"$X"_"$Y""* ]] # check if map is already in the grass mapset
+            then 
             mkdir -p /tmp/$VAR"_"$NEWDATE"_"$SEG
             
             if [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]; then S="PF"; elif [ "$VAR" == "ppt" ]; then S="PH"; elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] || [ "$VAR" == "tmean" ]; then S="PDH"; elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]; then S="DH"; fi
