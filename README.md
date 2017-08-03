@@ -1,6 +1,6 @@
 ### Description
-######7 options, the order is rigorous
-######aedesenv 1 2 3 4 5 {6 7}
+###### 7 options, the order is rigorous
+###### aedesenv 1 2 3 4 5 {6 7}
 1= directory where the file with coordinates and dates are stored
 2= file with dates. Dates must be organised in rows as follows
 YYYYMMDD
