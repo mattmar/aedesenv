@@ -17,7 +17,7 @@ function aedesenv ()
     DATES=$3 # input dates
     LAG=${4-1} # time lag to evaluate
     SEG=${6:-1} # name of the file segment
-    MERGE=${7:-1} # If MERGE == 1 than merge outputs
+    MERGE=${7:-0} # If MERGE == 1 than merge outputs
     #### To make an array a local variable ####
     # http://www.unix.com/shell-programming-and-scripting/61370-bash-ksh-passing-array-function.html
     # Setting the shell's Internal Field Separator to null
@@ -31,6 +31,11 @@ function aedesenv ()
     
     # Resetting IFS to default
     IFS=$OLD_IFS
+
+    # Remove file with output calues if exists
+    if [ -f "$DIR/output$SEG.txt" ]; then
+     mv $DIR/output$SEG.txt $DIR/output$SEG_old.txt
+    fi
 
     ##########################################
     MSC=`g.gisenv MAPSET` # GRASS mapset name
@@ -51,10 +56,9 @@ function aedesenv ()
     Y=`v.db.select tempcoords$SEG | cut -d"|" -f4| tail -1`; Y=`printf %.2f $Y`
     Y1=$(echo $Y - 0.1 | bc )
     g.region vector=tempcoords$SEG res=0:00:30 # set the region on DAYMET resolution
-    
     for VAR in "${VARS[@]}" # variable sequence
     do
-    	echo "###### Climatic variable $VAR ######"
+    	echo -e "\n###### Climatic variable $VAR ######\n"
         for ((ii=0;ii<=$LAG;ii++)) # time lag sequence
         do
             iii=`printf "%02d" $ii` # while index
@@ -80,11 +84,11 @@ function aedesenv ()
                     echo "###### Downloading PRISM data HTTP ######"
                     wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
                     echo "###### Downloading DAYMET data ######"
-                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&disableProjSubset=on&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
+                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&disableProjSubset=on&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1" &>>/tmp/wget_log$SEG.txt
                 elif [ "$S" == "DH" ]
                     then # HTTP
                     echo "###### Downloading DAYMET data HTTP ######"
-                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&accept=netcdf4" &>>/tmp/wget_log$SEG.txt
+                    wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&" &>>/tmp/wget_log$SEG.txt
                 else
                 	echo "Wrong variable name!"
             fi #fish data from webservice or ftp according to the variables
@@ -96,7 +100,7 @@ function aedesenv ()
                 if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" ]] 
                 	then
                     #echo "$VAR"_"$NEWDATE"
-                    gdal_translate -of GTiff netCDF:\"`ls /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.*`\":$VAR /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".tif"
+                    gdal_translate netCDF:\"`ls /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.*`\":$VAR /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".tif"
                     r.import input=/tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.tif out=D$VAR"_"$NEWDATE"_"$X"_"$Y --o
                 fi
             rm /tmp/$VAR"_"$NEWDATE"_"$SEG/ -rf #remove data folder
@@ -135,7 +139,7 @@ done < $DIR/$DATES 2>&1 | tee /tmp/aedesenv_std_error_log$SEG.log # Redirect the
 head -n1 $DIR/tempoutput$SEG.txt > $DIR/header$SEG.txt && cat $DIR/output$SEG.txt >> $DIR/header$SEG.txt && mv $DIR/header$SEG.txt $DIR/final_output$SEG.txt
 if [ $MERGE -eq 1 ]
 	then 
-# Merge the three files in one output file
+# Merge the many files in one output file
 cat $DIR/final_output*.txt > $DIR/outfile.txt
 sed -i '/^cat/d' $DIR/outfile.txt #Remove rows that begin with cat
 sed -i -e "1i\ `head -n1 $DIR/tempoutput$SEG.txt`" $DIR/outfile.txt #Add header
