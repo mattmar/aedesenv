@@ -32,7 +32,7 @@ function aedesenv ()
     # Resetting IFS to default
     IFS=$OLD_IFS
 
-    # Remove file with output calues if exists
+    # Move to _old the file with old output values if it exists
     if [ -f "$DIR/output$SEG.txt" ]; then
      mv $DIR/output$SEG.txt $DIR/output$SEG_old.txt
     fi
