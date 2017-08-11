@@ -90,7 +90,7 @@ function aedesenv ()
                     echo "###### Downloading DAYMET data HTTP ######"
                     wget --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&" &>>/tmp/wget_log$SEG.txt
                 else
-                	echo "Wrong variable name!"
+                	echo "Wrong variable name!"; exit
             fi #fish data from webservice or ftp according to the variables
             if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
                     then # Decompress the archive
@@ -120,12 +120,14 @@ function aedesenv ()
                 v.db.addcolumn map=tempcoords$SEG columns=D"$VAR"_lag_"$iii double precision" 
             fi
              # Check if map exists and sample it at coords
-             g.findfile element=cell file="P$VAR"_"$NEWDATE" mapset=$MSC > /dev/null
+             #g.findfile element=cell file="P$VAR"_"$NEWDATE" mapset=$MSC > /dev/null
+             g.findfile element=cell file="P$VAR"_"$NEWDATE"_"$X"_"$Y" > /dev/null
              if [ $? -eq 0 ] 
              	then
-                v.what.rast map=tempcoords$SEG raster=P$VAR"_"$NEWDATE column=P$VAR"_lag_"$iii # extract the value at coords x,y
+                v.what.rast map=tempcoords$SEG raster=P$VAR"_"$NEWDATE"_"$X"_"$Y column=P$VAR"_lag_"$iii # extract the value at coords x,y
             fi
-            g.findfile element=cell file="D$VAR"_"$NEWDATE"_"$X"_"$Y" mapset=$MSC > /dev/null
+            #g.findfile element=cell file="D$VAR"_"$NEWDATE"_"$X"_"$Y" mapset=$MSC > /dev/null
+            g.findfile element=cell file="D$VAR"_"$NEWDATE"_"$X"_"$Y" > /dev/null
             if [ $? -eq 0 ]
             	then
             	v.what.rast map=tempcoords$SEG raster=D$VAR"_"$NEWDATE"_"$X"_"$Y column=D$VAR"_lag_"$iii
