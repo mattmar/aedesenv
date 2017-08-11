@@ -56,12 +56,13 @@ aedesenv /data/home/matteo/prism_data/ coords_t dates_t 5 array
 
 # Divide dataset in different segments to speed up the process 
 cat $DIR/dates_only.csv | wc -l
-split -a 3 -dl 1000 $DIR/dates_only.csv $DIR/dates_new
+split -a 3 -dl 5000 $DIR/dates_only.csv $DIR/dates_new
+split -a 3 -dl 5000 $DIR/albo_coords1.csv $DIR/albo_coords1_new
 end=`ls dates_new* | wc -l`
 end=`expr $end - 1`
 
 # Create a file with the scripts to be run
-seq 1 $end | xargs -I {} echo -e source /data/home/matteo/GitHub/aedesenv/aedesenv_parallel.sh\; export s\;aedesenv_par '$s' > qsub_jobs.sh
+seq 1 $end | xargs -I {} echo -e source $HOME/GitHub/aedesenv/aedesenv_parallel.sh\; export s\;aedesenv_par '$s' > qsub_jobs.sh
 
 #Run the scripts through qsub
 for s in `seq 0 $end`
@@ -71,20 +72,20 @@ qsub -o $HOME/prism_data/log/ -e $HOME/prism_data/log/ -V -S /bin/bash -v s=$s -
 done
 
 # Multiple call of the function aedesenv in different GRASS mapsets - OLD FASHION - DISREGARDED
-grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISMsoul001
-array=( tmin tmax ppt vpdmax vpdmin vp prcp )
-aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new00 1 30 array 0
-grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM1soul001
-array=( tmin tmax ppt vpdmax vpdmin vp prcp )
-aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new01 2 30 array 0
-grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM2soul001
-array=( tmin tmax ppt vpdmax vpdmin vp prcp )
-aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new02 3 30 array 0
-grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM3soul001
-array=( tmin tmax ppt vpdmax vpdmin vp prcp )
-aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new03 4 30 array 1
+# grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISMsoul001
+# array=( tmin tmax ppt vpdmax vpdmin vp prcp )
+# aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new00 1 30 array 0
+# grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM1soul001
+# array=( tmin tmax ppt vpdmax vpdmin vp prcp )
+# aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new01 2 30 array 0
+# grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM2soul001
+# array=( tmin tmax ppt vpdmax vpdmin vp prcp )
+# aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new02 3 30 array 0
+# grass73 -c EPSG:4269 $HOME/grassdata/NAD83/PRISM3soul001
+# array=( tmin tmax ppt vpdmax vpdmin vp prcp )
+# aedesenv '/data/matteo/prism_data/' albo_coords1.csv dates_new03 4 30 array 1
 
-# Download data for elmonte 
-grass73 -c EPSG:4269 $HOME/grassdata/NAD83/elmonteT/
-clm=( tmin tmax vpdmax vpdmin vp)
-aedesenv '/data/matteo/prism_data/elmonte/' elmonte_coords elmonte_dates 0 clm 1 1
+# # Download data for elmonte 
+# grass73 -c EPSG:4269 $HOME/grassdata/NAD83/elmonteT/
+# clm=( tmin tmax vpdmax vpdmin vp)
+# aedesenv '/data/matteo/prism_data/elmonte/' elmonte_coords elmonte_dates 0 clm 1 1

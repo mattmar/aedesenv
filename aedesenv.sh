@@ -66,7 +66,7 @@ function aedesenv ()
             YEAR=${NEWDATE:0:4};MONTH=${NEWDATE:4:2};DAY=${NEWDATE:6:4} # Extract year, month and day
             echo "###### Working on date $ee, $DATE - time lag $ii/$LAG days #####"
             
-            if [[ $grassmaps != *"P"$VAR"_"$NEWDATE""* ]] || [[ $grassmaps != *"D"$VAR"_"$NEWDAss"_"$X"_"$Y""* ]] # check if map is already in the grass mapset
+            if [[ $grassmaps != *"P"$VAR"_"$NEWDATE"_"$X"_"$Y""* ]] || [[ $grassmaps != *"D"$VAR"_"$NEWDAss"_"$X"_"$Y""* ]] # check if map is already in the grass mapset
             	then 
             	mkdir -p /tmp/$VAR"_"$NEWDATE"_"$SEG
             	
@@ -95,7 +95,7 @@ function aedesenv ()
             if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
                     then # Decompress the archive
                     unzip -qq -o -d /tmp/$VAR"_"$NEWDATE"_"$SEG/ /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE 
-                    r.import in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE
+                    r.import in=` ls /tmp/$VAR"_"$NEWDATE"_"$SEG/"PRISM_"$VAR"_stable_4kmD"*"_"$NEWDATE"_bil.bil"` out=P$VAR"_"$NEWDATE"_"$X"_"$Y --o
                 fi
                 if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" ]] 
                 	then
