@@ -17,13 +17,13 @@ source /data/home/matteo/GitHub/aedesenv/aedesenv.sh
 # set computational region, here: UTM32N coordinates
 clm=( tmin tmax ppt vpdmax vpdmin vp prcp )
 DIR='/data/home/matteo/prism_data/'
-aedesenv /data/home/matteo/prism_data/ albo_coords1.csv dates_new$s 30 clm $s 0" > $HOME/my_grassjob$s.sh
+aedesenv /data/home/matteo/prism_data/ albo_coords1_new$s dates_new$s 30 clm $s 0" > /tmp/my_grassjob$s.sh
 
 # verify the content of the file
-cat $HOME/my_grassjob$s.sh
+cat /tmp/my_grassjob$s.sh
 
 # make it user executable (this is important, use 'chmod' or via file manager)
-chmod u+x $HOME/my_grassjob$s.sh
+chmod u+x /tmp/my_grassjob$s.sh
 
 # create a directory (may be elsewhere) to hold the location used for processing
 mkdir -p $HOME/grassdata
@@ -33,9 +33,10 @@ grass72 -e -c EPSG:4269 $HOME/grassdata/NAD83/PRISM$s
 
 #### 2) USING THE BATCH JOB
 # define job file as environmental variable
-export GRASS_BATCH_JOB="$HOME/my_grassjob$s.sh"
+export GRASS_BATCH_JOB="/tmp/my_grassjob$s.sh"
 
 # now we can use this new location and run the job defined via GRASS_BATCH_JOB
+source /data/home/matteo/GitHub/aedesenv/aedesenv.sh # This line due to a problem arised out of the blue recently. source seems to not working into GRASS
 grass72 $HOME/grassdata/NAD83/PRISM$s
 
 #### 3) CLEANUP
@@ -45,4 +46,3 @@ unset GRASS_BATCH_JOB
 # delete temporary location (consider to export results first in your batch job)
 #rm -rf $HOME/grassdata/mytemploc_utm32n
 }
-# Now you can use the resulting SHAPE file "mymap3000.shp" elsewhere.

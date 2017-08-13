@@ -56,19 +56,19 @@ aedesenv /data/home/matteo/prism_data/ coords_t dates_t 5 array
 
 # Divide dataset in different segments to speed up the process 
 cat $DIR/dates_only.csv | wc -l
-split -a 3 -dl 5000 $DIR/dates_only.csv $DIR/dates_new
-split -a 3 -dl 5000 $DIR/albo_coords1.csv $DIR/albo_coords1_new
+split -a 3 -dl 10000 $DIR/dates_only.csv $DIR/dates_new
+split -a 3 -dl 10000 $DIR/albo_coords1.csv $DIR/albo_coords1_new
 end=`ls dates_new* | wc -l`
 end=`expr $end - 1`
 
 # Create a file with the scripts to be run
-seq 1 $end | xargs -I {} echo -e source $HOME/GitHub/aedesenv/aedesenv_parallel.sh\; export s\;aedesenv_par '$s' > qsub_jobs.sh
+seq 1 $end | xargs -I {} echo -e source $HOME/GitHub/aedesenv/aedesenv_parallel.sh\; export s\;aedesenv_par '$s' > /tmp/qsub_jobs.sh
 
 #Run the scripts through qsub
 for s in `seq 0 $end`
 do 
 s=`printf "%03d\n" $s`
-qsub -o $HOME/prism_data/log/ -e $HOME/prism_data/log/ -V -S /bin/bash -v s=$s -N aedesenv_data$s qsub_jobs.sh
+qsub -o /data/home/matteo/prism_data/log/ -e /data/home/matteo/prism_data/log/ -V -S /bin/bash -v s=$s -N aedesenv_data$s /tmp/qsub_jobs.sh
 done
 
 # Multiple call of the function aedesenv in different GRASS mapsets - OLD FASHION - DISREGARDED
