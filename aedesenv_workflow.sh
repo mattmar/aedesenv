@@ -49,7 +49,7 @@ head $DIR/albo_coords1.csv -n3 > $DIR/coords_t
 
 # Run a test
 grass72 -e -c EPSG:4269 $HOME/grassdata/NAD83/
-grass72 -c $HOME/grassdata/NAD83/PRISMtest
+grass72 -c $HOME/grassdata/NAD83/PRISM
 array=( tmin tmax ppt vpdmax vpdmin vp prcp )
 DIR='/data/home/matteo/prism_data/'
 aedesenv /data/home/matteo/prism_data/ coords_t dates_t 5 array

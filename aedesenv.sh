@@ -29,13 +29,18 @@ function aedesenv ()
     # Assign loc_array value to ${$5[*]} using indirect variable reference
     local VARS=(${!VARS1}) # considered climatic variables    
     
+    # Check if climatic variables are specified
+    if [ ${#VARS[@]} -eq 0 ]; then
+        echo "Oops, no variables specified..."; exit
+    fi
+
     # Resetting IFS to default
     IFS=$OLD_IFS
 
     # Move to _old the file with old output values if it exists
     if [ -f "$DIR/output$SEG.txt" ]; then
-     mv $DIR/output$SEG.txt $DIR/output$SEG_old.txt
-    fi
+       mv $DIR/output$SEG.txt $DIR/output$SEG_old.txt
+   fi
 
     ##########################################
     MSC=`g.gisenv MAPSET` # GRASS mapset name
@@ -55,9 +60,9 @@ function aedesenv ()
     #echo $ee
     v.extract in=coords@PRISM$s cats=$ee out=tempcoords$SEG --o # extract a single point
     X=`v.db.select tempcoords$SEG | cut -d"|" -f3| tail -1`; X=`printf %.2f $X`
-    X1=$(echo $X - 0.1 | bc )
+    X1=$(echo $X - 0.05 | bc )
     Y=`v.db.select tempcoords$SEG | cut -d"|" -f4| tail -1`; Y=`printf %.2f $Y`
-    Y1=$(echo $Y - 0.1 | bc )
+    Y1=$(echo $Y - 0.05 | bc )
     g.region vector=tempcoords$SEG res=0:00:30 # set the region on DAYMET resolution
     for VAR in "${VARS[@]}" # variable sequence
     do
@@ -66,6 +71,8 @@ function aedesenv ()
         do
             iii=`printf "%02d" $ii` # while index
             NEWDATE=`date -d "$DATE-$ii days" '+%Y%m%d'` # date with a lag
+            DAYMETDATE=`date -d '2 years ago' '+%Y%m%d'` # date with a lag
+            CYEAR=${DAYMETDATE:0:4}
             YEAR=${NEWDATE:0:4};MONTH=${NEWDATE:4:2};DAY=${NEWDATE:6:4} # Extract year, month and day
             echo "###### Working on date $ee, $DATE - time lag $ii/$LAG days #####"
             
@@ -75,26 +82,36 @@ function aedesenv ()
             	
             	if [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]; then S="PF"; elif [ "$VAR" == "ppt" ]; then S="PH"; elif [ "$VAR" == "tmin" ] || [ "$VAR" == "tmax" ] || [ "$VAR" == "tmean" ]; then S="PDH"; elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]; then S="DH"; 
                 fi
-            	if [ "$S" == "PF" ] 
+                if [ "$S" == "PF" ] 
                     then # FTP
                     echo "###### Downloading PRISM data FTP ######"
-                    wget -c --no-dns-cache -4 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "ftp://anonymous@prism.oregonstate.edu/daily/"$VAR"/"${NEWDATE:0:4}"/PRISM_"$VAR"_stable_4kmD1_"$NEWDATE"_bil.zip" &>>/tmp/wget_log$SEG.txt
+                    wget -c --no-dns-cache -4 -t 1 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "ftp://anonymous@prism.oregonstate.edu/daily/"$VAR"/"${NEWDATE:0:4}"/PRISM_"$VAR"_stable_4kmD1_"$NEWDATE"_bil.zip" &>>/tmp/wget_log$SEG.txt
                 elif [ "$S" == "PH" ]
                     then # HTTP
                     echo "###### Downloading PRISM data HTTP ######"
-                    wget -c --no-dns-cache -4 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
+                    wget -c --no-dns-cache -4 -t 1 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
                 elif [ "$S" == "PDH" ]
                     then # HTTP
                     echo "###### Downloading PRISM data HTTP ######"
-                    wget -c --no-dns-cache -4 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
-                    echo "###### Downloading DAYMET data ######"
-                    wget -c --no-dns-cache -4 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&disableProjSubset=on&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1" &>>/tmp/wget_log$SEG.txt
+                    wget -c --no-dns-cache -4 -t 1 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" "http://services.nacse.org/prism/data/public/4km/$VAR/$NEWDATE" &>>/tmp/wget_log$SEG.txt
+                    if [ "$YEAR" -le "$CYEAR" ] # Check if year is compatible with DAYMET dataset
+                        then
+                        echo "###### Downloading DAYMET data ######"
+                        wget -c --no-dns-cache -4 -t 1 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&disableProjSubset=on&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1" &>>/tmp/wget_log$SEG.txt
+                    else 
+                    echo "Oops, recent year, no DAYMET data..."
+                    fi
                 elif [ "$S" == "DH" ]
                     then # HTTP
-                    echo "###### Downloading DAYMET data HTTP ######"
-                    wget -c --no-dns-cache -4 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&" &>>/tmp/wget_log$SEG.txt
+                    if [ "$YEAR" -le "$CYEAR" ] # Check if year is compatible with DAYMET dataset
+                        then
+                        echo "###### Downloading DAYMET data HTTP ######"
+                        wget -c --no-dns-cache -4 -t 1 --limit-rate=3m -O /tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE".nc4" "http://thredds.daac.ornl.gov/thredds/ncss/grid/ornldaac/1328/${YEAR}/daymet_v3_${VAR}_${YEAR}_na.nc4?var=lat&var=lon&var=${VAR}&north=${Y}&west=${X1}&east=${X}&south=${Y1}&horizStride=1&time_start=${YEAR}-${MONTH}-${DAY}T12:00:00Z&time_end=${YEAR}-${MONTH}-${DAY}T12:00:00Z&timeStride=1&" &>>/tmp/wget_log$SEG.txt
+                    else 
+                        echo "Oops, recent year, no DAYMET data..."
+                    fi
                 else
-                	echo "Wrong variable name!"; exit
+                    echo "Oops, wrong variable name! Exiting"; exit
                 fi
                 #fish data from webservice or ftp according to the variables
                 if [[ -f /tmp/$VAR"_"$NEWDATE"_"$SEG/Pfile"_"$VAR"_"$NEWDATE".zip" ]] 
@@ -109,11 +126,11 @@ function aedesenv ()
                     r.import input=/tmp/$VAR"_"$NEWDATE"_"$SEG/Dfile"_"$VAR"_"$NEWDATE.tif out=D$VAR"_"$NEWDATE"_"$X"_"$Y --o
                 fi # End of data downloading
             rm /tmp/$VAR"_"$NEWDATE"_"$SEG/ -rf #remove data folder
-            else 
-                echo -e "\n ## Map already in GRASSDATA, skipping download ## \n"
-            fi
+        else 
+            echo -e "\n ## Map already in GRASSDATA, skipping download ## \n"
+        fi
              # Add columns according to the database
-            if [ "$VAR" == "ppt" ] || [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]
+             if [ "$VAR" == "ppt" ] || [ "$VAR" == "vpdmax" ] || [ "$VAR" == "vpdmin" ]
                 then #PRISM
                 v.db.addcolumn map=tempcoords$SEG columns=P"$VAR"_lag_"$iii double precision" 
             elif [ "$VAR" == "prcp" ] || [ "$VAR" == "vp" ]
@@ -127,7 +144,7 @@ function aedesenv ()
              # Check if map exists and sample it at coords
              #g.findfile element=cell file="P$VAR"_"$NEWDATE" mapset=$MSC > /dev/null
              g.findfile element=cell file="P$VAR"_"$NEWDATE"_"$X"_"$Y" > /dev/null
-            if [ $? -eq 0 ] 
+             if [ $? -eq 0 ] 
              	then
                 v.what.rast map=tempcoords$SEG raster=P$VAR"_"$NEWDATE"_"$X"_"$Y column=P$VAR"_lag_"$iii # extract the value at coords x,y
             fi
